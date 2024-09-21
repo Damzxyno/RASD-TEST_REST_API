@@ -13,7 +13,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer updateCustomer(Customer customer) {
+    public Customer updateCustomer(Long id, Customer customer) {
         return null;
     }
 }

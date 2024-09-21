@@ -17,7 +17,7 @@ public class SalesServiceImpl implements SalesService {
 
     @Override
     public Sale addSale(Sale sale) {
-        sale.setId(sales.size());
+        sale.setId((long) sales.size());
         sales.add(sale);
         return sale;
     }

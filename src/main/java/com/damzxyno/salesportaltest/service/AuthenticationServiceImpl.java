@@ -2,8 +2,8 @@ package com.damzxyno.salesportaltest.service;
 
 import com.damzxyno.salesportaltest.dto.AuthRequestDTO;
 import com.damzxyno.salesportaltest.dto.JwtResponseDTO;
-import com.damzxyno.salesportaltest.model.UserRegistrationDTO;
-import com.damzxyno.salesportaltest.model.UserRegistrationResponseDTO;
+import com.damzxyno.salesportaltest.dto.UserRegistrationDTO;
+import com.damzxyno.salesportaltest.dto.UserRegistrationResponseDTO;
 import com.damzxyno.salesportaltest.service.interfaces.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;

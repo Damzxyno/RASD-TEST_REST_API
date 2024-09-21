@@ -1,5 +1,4 @@
 package com.damzxyno.salesportaltest.config;
-
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,15 +12,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 @Component
 public class TimeBasedAccessInterceptor implements HandlerInterceptor {
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (handler instanceof HandlerMethod) {
-            HandlerMethod method = (HandlerMethod) handler;
-            TimeRestricted timeRestricted = method.getMethodAnnotation(TimeRestricted.class);
+            TimeRestricted timeRestricted = ((HandlerMethod) handler).getMethodAnnotation(TimeRestricted.class);
 
             if (timeRestricted != null) {
                 LocalTime now = LocalTime.now();

@@ -7,10 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.damzxyno.rasdspringapi.models.Operation;
 import com.damzxyno.rasdspringapi.models.PathItem;
 import com.damzxyno.rasdspringapi.models.RASD;
+import com.damzxyno.rasdspringapi.models.SecureModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +32,21 @@ public class AuthorisationReportIntegrationTest {
     private ObjectMapper mapper;
     private RASD rasd;
 
+    private final String LOGIN_ENDPOINT = "/api/v1/login";
+    private final String LOG_OUT_ENDPOINT = "/api/v1/logout";
+    private final String REGISTER_ENDPOINT = "/api/v1/register";
+    private final String CUSTOMER_ENDPOINT = "/api/v1/customers";
+    private final String SALES_ENDPOINT = "/api/v1/sales";
+    private final String PRODUCT_ENDPOINT = "/api/v1/products";
+    private final String RASD_API_ENDPOINT = "/rasd/authorisation-report";
+    private final String RASD_UI_ENDPOINT = "/rasd/ui";
+
+
     @BeforeEach
     public void setUp(){
         try {
             var rasdStr = mockMvc.perform(get("/rasd/authorisation-report"))  // Use the correct URL
-                    .andExpect(status().isOk())                 // Expect HTTP 200 status
+                    .andExpect(status().isOk())
                     .andExpect(content().contentType("application/json"))
                     .andReturn()
                     .getResponse()
@@ -49,15 +58,96 @@ public class AuthorisationReportIntegrationTest {
     }
 
     @Test
-    public void specContainsAllEndpoints(){
-        String [] allEndpoints = new String[]{
-            "/api/v1/login",
-            "/api/v1/sales"
-        };
-        for (String endpoint : allEndpoints){
-            Assertions.assertTrue(rasd.getPaths().containsKey(endpoint));
-        }
+    public void specificationContainsAllEndpoints(){
+        Assertions.assertNotNull(rasd, "RASD object should not be null");
+
+        // Check if each individual endpoint is present in the paths
+        Assertions.assertTrue(rasd.getPaths().containsKey(LOGIN_ENDPOINT),
+                "Endpoint " + LOGIN_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(LOG_OUT_ENDPOINT),
+                "Endpoint " + LOG_OUT_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(REGISTER_ENDPOINT),
+                "Endpoint " + REGISTER_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(CUSTOMER_ENDPOINT),
+                "Endpoint " + CUSTOMER_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(SALES_ENDPOINT),
+                "Endpoint " + SALES_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(PRODUCT_ENDPOINT),
+                "Endpoint " + PRODUCT_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(RASD_API_ENDPOINT),
+                "Endpoint " + RASD_API_ENDPOINT + " is missing from the paths.");
+
+        Assertions.assertTrue(rasd.getPaths().containsKey(RASD_UI_ENDPOINT),
+                "Endpoint " + RASD_UI_ENDPOINT + " is missing from the paths.");
     }
+
+    @Test
+    public void specificationDoesNotContainInvalidEndpoints() {
+        // Arrange
+        final String INVALID_ENDPOINT_1 = "/api/v1/invalid1";
+        final String INVALID_ENDPOINT_2 = "/api/v1/invalid2";
+        final String INVALID_ENDPOINT_3 = "/api/v1/invalid3";
+
+        // Ensure that rasd is properly initialized
+        Assertions.assertNotNull(rasd, "RASD object should not be null");
+
+        // Check if each invalid endpoint is NOT present in the paths
+        Assertions.assertFalse(rasd.getPaths().containsKey(INVALID_ENDPOINT_1),
+                "Endpoint " + INVALID_ENDPOINT_1 + " should not be present in the paths.");
+
+        Assertions.assertFalse(rasd.getPaths().containsKey(INVALID_ENDPOINT_2),
+                "Endpoint " + INVALID_ENDPOINT_2 + " should not be present in the paths.");
+
+        Assertions.assertFalse(rasd.getPaths().containsKey(INVALID_ENDPOINT_3),
+                "Endpoint " + INVALID_ENDPOINT_3 + " should not be present in the paths.");
+    }
+
+    @Test
+    public void specificationShouldContainAllRBACSpecificationForCustomerManagement(){
+        PathItem compoundPathItem = rasd.getPaths().get(CUSTOMER_ENDPOINT);
+        PathItem specificItemPathItem = rasd.getPaths().get(CUSTOMER_ENDPOINT + "/{id}");
+
+        // Test For Authentication
+        Assertions.assertTrue(compoundPathItem.getGet().isAuthenticated());
+        Assertions.assertTrue(specificItemPathItem.getPut().isAuthenticated());
+
+        // Test For Roles And Permission [GET]
+        List<SecureModel> getCompoundSecureModels = compoundPathItem.getGet().getAuthorisationMod().getRelativeMod();
+        SecureModel getSecureModel1 = new SecureModel();
+        getSecureModel1.getRoles().add("'CUSTOMER'");
+
+        SecureModel getSecureModel2 = new SecureModel();
+        getSecureModel2.getRoles().add("'CUSTOMER_RELATION'");
+
+        SecureModel getSecureModel3 = new SecureModel();
+        getSecureModel3.getRoles().add("'ADMIN'");
+
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel2));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel3));
+
+        // Test For Roles And Permission [PUT]
+        List<SecureModel> putCompoundSecureModels = specificItemPathItem.getPut().getAuthorisationMod().getRelativeMod();
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel2));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel3));
+    }
+
+    public boolean secureModelListContainThisSecureModel (List<SecureModel> secureModels,  SecureModel secureModelB){
+        for (SecureModel secureModelA : secureModels){
+            boolean isPresent = false;
+            if (secureModelA.equalsThisSecureModel(secureModelB)){
+                return true;
+            }
+        }
+        return false;
+    };
 
     @Test
     public void specDoesNotContainUnKnownEndpoints(){

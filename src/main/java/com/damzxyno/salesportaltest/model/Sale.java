@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Sale {
-    private long id;
+    private Long id;
     private String description;
+    private Long customerId;
 }

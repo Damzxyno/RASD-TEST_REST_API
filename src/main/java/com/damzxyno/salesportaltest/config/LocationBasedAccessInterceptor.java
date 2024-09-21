@@ -24,7 +24,13 @@ public class LocationBasedAccessInterceptor implements HandlerInterceptor {
             LocationRestricted locationRestricted = method.getMethodAnnotation(LocationRestricted.class);
 
             if (locationRestricted != null) {
-                var locationAccepted = locationRestricted.locationAccepted();
+                String[] locationAccepted = locationRestricted.locationAccepted();
+                String userLocation = request.getHeader("X-User-Location");
+
+                if (userLocation == null || !Arrays.asList(locationAccepted).contains(userLocation)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    return false;
+                }
 
             }
         }

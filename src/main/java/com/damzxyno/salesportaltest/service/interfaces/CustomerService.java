@@ -8,5 +8,5 @@ import java.util.List;
 public interface CustomerService {
     List<Customer> getCustomers();
 
-    Customer updateCustomer(Customer customer);
+    Customer updateCustomer(Long id, Customer customer);
 }

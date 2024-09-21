@@ -1,6 +1,5 @@
 package com.damzxyno.salesportaltest.controller;
 
-
 import com.damzxyno.salesportaltest.config.LocationRestricted;
 import com.damzxyno.salesportaltest.model.Product;
 import com.damzxyno.salesportaltest.service.interfaces.ProductService;

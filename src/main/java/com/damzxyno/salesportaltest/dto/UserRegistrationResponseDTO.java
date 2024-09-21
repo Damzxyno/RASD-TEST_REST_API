@@ -1,4 +1,4 @@
-package com.damzxyno.salesportaltest.model;
+package com.damzxyno.salesportaltest.dto;
 
 public class UserRegistrationResponseDTO {
 }

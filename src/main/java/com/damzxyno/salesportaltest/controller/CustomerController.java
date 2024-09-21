@@ -16,17 +16,16 @@ import java.util.List;
 public class CustomerController {
     private final CustomerService customerService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
+
     @GetMapping
     public ResponseEntity<List<Customer>> getCustomers() {
         var resp = customerService.getCustomers();
         return ResponseEntity.ok(resp);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
-    @PutMapping
-    public ResponseEntity<Customer> modifyCustomers(@RequestBody Customer customer) {
-        var resp = customerService.updateCustomer(customer);
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> modifyCustomers(@PathVariable Long id, @RequestBody Customer customer) {
+        var resp = customerService.updateCustomer(id, customer);
         return ResponseEntity.ok(resp);
     }
 

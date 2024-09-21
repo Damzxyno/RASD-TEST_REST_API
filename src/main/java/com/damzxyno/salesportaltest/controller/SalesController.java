@@ -1,6 +1,5 @@
 package com.damzxyno.salesportaltest.controller;
 
-
 import com.damzxyno.salesportaltest.config.TimeRestricted;
 import com.damzxyno.salesportaltest.model.Sale;
 import com.damzxyno.salesportaltest.service.interfaces.SalesService;
@@ -15,22 +14,21 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = {"/api/v1/sales"})
-@PreAuthorize(
-        "hasRole('ROLE_PERMISSION') or " +
-                "(hasRole('ADMIN') and hasAuthority('VIEW_SALES')) or " +
-                "hasRole('SALES_MANAGER')"
-)
 public class SalesController {
     private final SalesService salesService;
 
-
+    @PreAuthorize(
+            "hasRole('ROLE_CUSTOMER') or (hasRole('ADMIN') and hasAuthority('VIEW_SALES')) or hasRole('SALES_MANAGER')"
+    )
     @GetMapping
     public ResponseEntity<List<Sale>> getSale(){
         var resp =  salesService.getSales();
         return ResponseEntity.ok(resp);
     }
 
-
+    @PreAuthorize(
+            "hasRole('ROLE_CUSTOMER') or (hasRole('ADMIN') and hasAuthority('VIEW_SALES')) or hasRole('SALES_MANAGER')"
+    )
     @GetMapping("/{id}")
     public ResponseEntity<Sale> getSale(@PathVariable long id){
         var resp =  salesService.getSale(id);
@@ -43,6 +41,9 @@ public class SalesController {
             timeZone = "GMT",
             restrictedDays = {DayOfWeek.SATURDAY, DayOfWeek.SUNDAY}
     )
+    @PreAuthorize(
+            "hasRole('ROLE_CUSTOMER') or (hasRole('ADMIN') and hasAuthority('MANAGE_SALES')) or hasRole('SALES_MANAGER')"
+    )
     @PostMapping
     public ResponseEntity<Sale> createSale(@RequestBody Sale sale){
         var resp =  salesService.addSale(sale);
@@ -54,6 +55,9 @@ public class SalesController {
             endTime = "21:00",
             timeZone = "GMT",
             restrictedDays = {DayOfWeek.SATURDAY, DayOfWeek.SUNDAY}
+    )
+    @PreAuthorize(
+            "hasRole('ROLE_CUSTOMER') or (hasRole('ADMIN') and hasAuthority('MANAGE_SALES')) or hasRole('SALES_MANAGER')"
     )
     @PutMapping
     public ResponseEntity<Sale> modifySale(@RequestBody Sale sale){
