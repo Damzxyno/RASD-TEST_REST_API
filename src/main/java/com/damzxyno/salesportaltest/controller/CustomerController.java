@@ -9,13 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = {"/api/v1/customers"})
 public class CustomerController {
     private final CustomerService customerService;
-
 
     @GetMapping
     public ResponseEntity<List<Customer>> getCustomers() {
@@ -28,6 +26,4 @@ public class CustomerController {
         var resp = customerService.updateCustomer(id, customer);
         return ResponseEntity.ok(resp);
     }
-
-
 }

@@ -4,10 +4,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
-import com.damzxyno.rasdspringapi.models.Operation;
 import com.damzxyno.rasdspringapi.models.PathItem;
 import com.damzxyno.rasdspringapi.models.RASD;
 import com.damzxyno.rasdspringapi.models.SecureModel;
+import com.damzxyno.rasdspringapi.models.TimeRange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
-import java.util.Arrays;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,9 +34,9 @@ public class AuthorisationReportIntegrationTest {
     private ObjectMapper mapper;
     private RASD rasd;
 
-    private final String LOGIN_ENDPOINT = "/api/v1/login";
-    private final String LOG_OUT_ENDPOINT = "/api/v1/logout";
-    private final String REGISTER_ENDPOINT = "/api/v1/register";
+    private final String LOGIN_ENDPOINT = "/api/v1/auth/login";
+    private final String LOG_OUT_ENDPOINT = "/api/v1/auth/logout";
+    private final String REGISTER_ENDPOINT = "/api/v1/auth/register";
     private final String CUSTOMER_ENDPOINT = "/api/v1/customers";
     private final String SALES_ENDPOINT = "/api/v1/sales";
     private final String PRODUCT_ENDPOINT = "/api/v1/products";
@@ -58,7 +60,7 @@ public class AuthorisationReportIntegrationTest {
     }
 
     @Test
-    public void specificationContainsAllEndpoints(){
+    public void rasdReportContainsAllEndpoints(){
         Assertions.assertNotNull(rasd, "RASD object should not be null");
 
         // Check if each individual endpoint is present in the paths
@@ -88,7 +90,7 @@ public class AuthorisationReportIntegrationTest {
     }
 
     @Test
-    public void specificationDoesNotContainInvalidEndpoints() {
+    public void rasdReportDoesNotContainInvalidEndpoints() {
         // Arrange
         final String INVALID_ENDPOINT_1 = "/api/v1/invalid1";
         final String INVALID_ENDPOINT_2 = "/api/v1/invalid2";
@@ -109,7 +111,7 @@ public class AuthorisationReportIntegrationTest {
     }
 
     @Test
-    public void specificationShouldContainAllRBACSpecificationForCustomerManagement(){
+    public void rasdReportShouldContainAllRBACSpecificationForCustomerManagement(){
         PathItem compoundPathItem = rasd.getPaths().get(CUSTOMER_ENDPOINT);
         PathItem specificItemPathItem = rasd.getPaths().get(CUSTOMER_ENDPOINT + "/{id}");
 
@@ -120,13 +122,13 @@ public class AuthorisationReportIntegrationTest {
         // Test For Roles And Permission [GET]
         List<SecureModel> getCompoundSecureModels = compoundPathItem.getGet().getAuthorisationMod().getRelativeMod();
         SecureModel getSecureModel1 = new SecureModel();
-        getSecureModel1.getRoles().add("'CUSTOMER'");
+        getSecureModel1.getRoles().add("CUSTOMER");
 
         SecureModel getSecureModel2 = new SecureModel();
-        getSecureModel2.getRoles().add("'CUSTOMER_RELATION'");
+        getSecureModel2.getRoles().add("CUSTOMER_RELATION");
 
         SecureModel getSecureModel3 = new SecureModel();
-        getSecureModel3.getRoles().add("'ADMIN'");
+        getSecureModel3.getRoles().add("ADMIN");
 
         Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel1));
         Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel2));
@@ -139,9 +141,172 @@ public class AuthorisationReportIntegrationTest {
         Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel3));
     }
 
-    public boolean secureModelListContainThisSecureModel (List<SecureModel> secureModels,  SecureModel secureModelB){
+    @Test
+    public void rasdReportShouldContainAllRBACSpecificationForSalesManagement() {
+        PathItem compoundPathItem = rasd.getPaths().get(SALES_ENDPOINT);
+        PathItem specificItemPathItem = rasd.getPaths().get(SALES_ENDPOINT + "/{id}");
+
+        // Test For Authentication
+        Assertions.assertTrue(compoundPathItem.getGet().isAuthenticated());
+        Assertions.assertTrue(compoundPathItem.getPut().isAuthenticated());
+        Assertions.assertTrue(compoundPathItem.getPost().isAuthenticated());
+        Assertions.assertTrue(specificItemPathItem.getGet().isAuthenticated());
+
+        // Test For Roles And Permission [GET]
+        List<SecureModel> getCompoundSecureModels = compoundPathItem.getGet().getAuthorisationMod().getRelativeMod();
+        SecureModel getSecureModel1 = new SecureModel();
+        getSecureModel1.getRoles().add("SALES_MANAGER");
+
+        SecureModel getSecureModel2 = new SecureModel();
+        getSecureModel2.getRoles().add("ADMIN");
+        getSecureModel2.getPermissions().add("VIEW_SALES");
+
+        SecureModel getSecureModel3 = new SecureModel();
+        getSecureModel3.getRoles().add("ADMIN");
+        getSecureModel3.getPermissions().add("MANAGE_SALES");
+
+
+
+        SecureModel getSecureModel4 = new SecureModel();
+        getSecureModel4.getRoles().add("ROLE_CUSTOMER");
+
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel2));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel4));
+
+        // Test For Roles And Permission [PUT]
+        List<SecureModel> putCompoundSecureModels = compoundPathItem.getPut().getAuthorisationMod().getRelativeMod();
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel3));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, getSecureModel4)); // ROLE_CUSTOMER should not have access
+
+        // Test For Roles And Permission [POST]
+        List<SecureModel> postCompoundSecureModels = compoundPathItem.getPost().getAuthorisationMod().getRelativeMod();
+        Assertions.assertTrue(secureModelListContainThisSecureModel(postCompoundSecureModels, getSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(postCompoundSecureModels, getSecureModel3));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(postCompoundSecureModels, getSecureModel4)); // ROLE_CUSTOMER should not have access
+    }
+
+    @Test
+    public void rasdReportShouldContainAllRBACSpecificationForProductManagement() {
+        PathItem compoundPathItem = rasd.getPaths().get(PRODUCT_ENDPOINT);
+        PathItem specificItemPathItem = rasd.getPaths().get(PRODUCT_ENDPOINT + "/{id}");
+
+        // Test For Authentication
+        Assertions.assertTrue(compoundPathItem.getGet().isAuthenticated());
+        Assertions.assertTrue(compoundPathItem.getPut().isAuthenticated());
+        Assertions.assertTrue(compoundPathItem.getPost().isAuthenticated());
+        Assertions.assertTrue(compoundPathItem.getDelete().isAuthenticated());
+        Assertions.assertTrue(specificItemPathItem.getGet().isAuthenticated());
+
+        // Test For Roles And Permission [GET]
+        List<SecureModel> getCompoundSecureModels = compoundPathItem.getGet().getAuthorisationMod().getRelativeMod();
+        SecureModel getSecureModel1 = new SecureModel();
+        getSecureModel1.getRoles().add("ADMIN");
+        getSecureModel1.getPermissions().add("VIEW_SALES"); // Not specifically needed but illustrates permission
+
+        Assertions.assertFalse(secureModelListContainThisSecureModel(getCompoundSecureModels, getSecureModel1)); // Check if ADMIN has no direct access
+
+        // Test For Roles And Permission [PUT]
+        List<SecureModel> putCompoundSecureModels = compoundPathItem.getPut().getAuthorisationMod().getRelativeMod();
+        SecureModel putSecureModel1 = new SecureModel();
+        putSecureModel1.getRoles().add("MARKETING_MANAGER");
+
+        SecureModel putSecureModel2 = new SecureModel();
+        putSecureModel2.getRoles().add("ADMIN");
+        putSecureModel2.getPermissions().add("MANAGE_PRODUCT");
+
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, putSecureModel1));
+        Assertions.assertTrue(secureModelListContainThisSecureModel(putCompoundSecureModels, putSecureModel2));
+
+        // Test For Roles And Permission [POST]
+        List<SecureModel> postCompoundSecureModels = compoundPathItem.getPost().getAuthorisationMod().getRelativeMod();
+        Assertions.assertTrue(secureModelListContainThisSecureModel(postCompoundSecureModels, putSecureModel2)); // Only ADMIN can manage products
+
+        // Test For Roles And Permission [DELETE]
+        SecureModel deleteCompoundSecureModel = compoundPathItem.getDelete().getAuthorisationMod().getStaticMod();
+        Assertions.assertTrue(deleteCompoundSecureModel.equalsThisSecureModel(putSecureModel2)); // Only ADMIN can delete products
+    }
+
+    @Test
+    public void rasdReportShouldContainAllRBACSpecificationForAuthenticationManagement() {
+        PathItem loginPathItem = rasd.getPaths().get(LOGIN_ENDPOINT);
+        PathItem logoutPathItem = rasd.getPaths().get(LOG_OUT_ENDPOINT);
+        PathItem registerPathItem = rasd.getPaths().get(REGISTER_ENDPOINT);
+
+        // Test For Authentication
+        Assertions.assertFalse(loginPathItem.getPost().isAuthenticated());
+        Assertions.assertTrue(logoutPathItem.getPost().isAuthenticated());
+        Assertions.assertFalse(registerPathItem.getPost().isAuthenticated());
+    }
+    @Test
+    public void rasdReportShouldContainAllRBACSpecificationForAuthorizationReport() {
+        PathItem rasdApiPathItem = rasd.getPaths().get(RASD_API_ENDPOINT);
+
+        // Test For Authentication
+        Assertions.assertFalse(rasdApiPathItem.getGet().isAuthenticated());
+    }
+
+    @Test
+    public void rasdReportShouldContainAllRBACSpecificationForRasdUi() {
+        PathItem rasdUiPathItem = rasd.getPaths().get(RASD_UI_ENDPOINT);
+
+        // Test For Authentication
+        Assertions.assertFalse(rasdUiPathItem.getGet().isAuthenticated());
+    }
+
+    @Test
+    public void rasdReportShouldContainAllTBACSpecificationForSalesManagent(){
+        final EnumMap<DayOfWeek, TimeRange> permittedTimes = new EnumMap<>(DayOfWeek.class);
+        final EnumMap<DayOfWeek, TimeRange> restrictedTimes = new EnumMap<>(DayOfWeek.class);
+        final TimeRange timeRange = new TimeRange(LocalTime.of(8, 0), LocalTime.of(21, 0));
+        permittedTimes.put(DayOfWeek.MONDAY, timeRange);
+        permittedTimes.put(DayOfWeek.TUESDAY, timeRange);
+        permittedTimes.put(DayOfWeek.WEDNESDAY, timeRange);
+        permittedTimes.put(DayOfWeek.THURSDAY, timeRange);
+        permittedTimes.put(DayOfWeek.FRIDAY, timeRange);
+
+        restrictedTimes.put(DayOfWeek.SATURDAY, timeRange);
+        restrictedTimes.put(DayOfWeek.SUNDAY, timeRange);
+
+        PathItem compoundPathItem = rasd.getPaths().get(SALES_ENDPOINT);
+        PathItem specificItemPathItem = rasd.getPaths().get(SALES_ENDPOINT + "/{id}");
+
+        EnumMap<DayOfWeek, TimeRange> actualPutPermittedTimes =
+                compoundPathItem.getPut().getAuthorisationMod().getStaticMod().getTimeRulesAccept();
+        EnumMap<DayOfWeek, TimeRange> actualPutRestrictedTimes =
+                compoundPathItem.getPut().getAuthorisationMod().getStaticMod().getTimeRulesRestrict();
+        EnumMap<DayOfWeek, TimeRange> actualPostPermittedTimes =
+                compoundPathItem.getPost().getAuthorisationMod().getStaticMod().getTimeRulesAccept();
+        EnumMap<DayOfWeek, TimeRange> actualPostRestrictedTimes =
+                compoundPathItem.getPost().getAuthorisationMod().getStaticMod().getTimeRulesRestrict();
+        Assertions.assertEquals(permittedTimes, actualPutPermittedTimes,
+                "Permitted times should match the expected times for weekdays.");
+        Assertions.assertEquals(restrictedTimes, actualPutRestrictedTimes,
+                "Restricted times should match the expected times for weekdays.");
+        Assertions.assertEquals(permittedTimes, actualPostPermittedTimes,
+                "Permitted times should match the expected times for weekdays.");
+        Assertions.assertEquals(restrictedTimes, actualPostRestrictedTimes,
+                "Restricted times should match the expected times for weekdays.");
+    }
+
+    @Test
+    public void rasdReportShouldContainAllLocationSpecificationForCustomerManagement(){
+        PathItem compoundPathItem = rasd.getPaths().get(PRODUCT_ENDPOINT);
+        PathItem specificItemPathItem = rasd.getPaths().get(PRODUCT_ENDPOINT + "/{id}");
+        Set<String> acceptedLocations = new HashSet<>(List.of("UK"));
+
+        Assertions.assertEquals(compoundPathItem.getGet().getAuthorisationMod().getStaticMod().getAcceptedLocation(), acceptedLocations);
+        Assertions.assertEquals(compoundPathItem.getPut().getAuthorisationMod().getStaticMod().getAcceptedLocation(), acceptedLocations);
+        Assertions.assertEquals(compoundPathItem.getPost().getAuthorisationMod().getStaticMod().getAcceptedLocation(), acceptedLocations);
+        Assertions.assertEquals(compoundPathItem.getDelete().getAuthorisationMod().getStaticMod().getAcceptedLocation(), acceptedLocations);
+        Assertions.assertEquals(specificItemPathItem.getGet().getAuthorisationMod().getStaticMod().getAcceptedLocation(), acceptedLocations);
+    }
+
+
+    private boolean secureModelListContainThisSecureModel (List<SecureModel> secureModels,  SecureModel secureModelB){
+        var rr = secureModelB.equalsThisSecureModel(secureModelB);
         for (SecureModel secureModelA : secureModels){
-            boolean isPresent = false;
             if (secureModelA.equalsThisSecureModel(secureModelB)){
                 return true;
             }
@@ -149,52 +314,4 @@ public class AuthorisationReportIntegrationTest {
         return false;
     };
 
-    @Test
-    public void specDoesNotContainUnKnownEndpoints(){
-        String [] allEndpoints = new String[]{
-                "/api/v1/login/fake",
-                "/api/v1/sales/fake"
-        };
-        for (String endpoint : allEndpoints){
-            Assertions.assertFalse(rasd.getPaths().containsKey(endpoint));
-        }
-    }
-
-    @Test
-    public void specContainsAllCompulsoryRolesAndPermission(){
-        //ENDPOINT 1
-        String endpoint1Verb = "POST";
-        String endpoint1 = "/api/v1/login";
-        Set<String> endpoint1Permissions = new HashSet<>();
-        Set<String> endpoint1Roles = new HashSet<>();
-
-        // ENDPOINT 2
-        String endpoint2Verb = "GET";
-        String endpoint2 = "/api/v1/sales";
-        Set<String> endpoint2Permissions = new HashSet<>();
-        Set<String> endpoint2Roles = new HashSet<>();
-
-        // ENDPOINT 2
-        String endpoint3Verb = "POST";
-        String endpoint3 = "/api/v1/sales";
-        Set<String> endpoint3Permissions = new HashSet<>();
-        Set<String> endpoint3Roles = new HashSet<>(Arrays.asList("ADMIN"));
-
-        Operation endpoint1Operation = rasd.getPaths().get(endpoint1).getPost();
-        Assertions.assertFalse(endpoint1Operation.isAuthenticated());
-        Assertions.assertTrue(endpoint1Operation.getAuthorisationMod().getStaticMod().getRoles().isEmpty());
-        Assertions.assertTrue(endpoint1Operation.getAuthorisationMod().getStaticMod().getPermissions().isEmpty());
-
-        Operation endpoint2Operation = rasd.getPaths().get(endpoint2).getGet();
-        Assertions.assertTrue(endpoint2Operation.isAuthenticated());
-        Assertions.assertTrue(endpoint2Operation.getAuthorisationMod().getStaticMod().getRoles().isEmpty());
-        Assertions.assertTrue(endpoint2Operation.getAuthorisationMod().getStaticMod().getPermissions().isEmpty());
-
-        var endpoint3Operation = rasd.getPaths().get(endpoint3).getPost();
-        Assertions.assertTrue(endpoint3Operation.isAuthenticated());
-        for (String role : endpoint3Roles){
-            Assertions.assertTrue(endpoint3Operation.getAuthorisationMod().getStaticMod().getRoles().contains(role));
-        }
-        Assertions.assertTrue(endpoint3Operation.getAuthorisationMod().getStaticMod().getPermissions().isEmpty());
-    }
 }

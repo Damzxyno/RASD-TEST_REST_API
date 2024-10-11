@@ -10,6 +10,27 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST controller for managing product-related operations.
+ * -----------------------------------------------------------
+ * This controller exposes endpoints under the "/api/v1/products" URI,
+ * and all the requests are restricted to users accessing from accepted locations.
+ * The location restriction for this controller allows access only from the "UK".
+ * ---------------
+ * It provides two primary endpoints:
+ * 1. Fetching a list of all available products.
+ * 2. Fetching details of a specific product by its ID.
+ * -----------------------------------------------------------------
+ * This controller leverages {@code ProductService} to handle business logic.
+ * -----------------------
+ * Annotations:
+ * - {@code @RestController}: Indicates that this class is a REST controller.
+ * - {@code @RequestMapping}: Maps requests to "/api/v1/products".
+ * - {@code @RequiredArgsConstructor}: Automatically generates a constructor with required fields.
+ * - {@code @LocationRestricted}: Restricts access to users from the "UK".
+ *
+ * @author damzxyno
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = {"/api/v1/products"})
